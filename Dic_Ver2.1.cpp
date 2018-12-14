@@ -1177,7 +1177,10 @@ void Show_Group_Info(Data_Manager * data, Dir_Manager * dir_master, wstring grou
 		error_average += stod(words[i][word_size - 3].get_raw()) * test_num;
 		test_num_sum += test_num;
 	}
-	error_average = (double)error_average / test_num_sum;
+	if (test_num_sum == 0)
+		error_average = 0;
+	else
+		error_average = (double)error_average / test_num_sum;
 
 	/* Show the information */
 	pos.x = 24; pos.y = 8;
@@ -1365,8 +1368,9 @@ vector<Array> Search(Data_Manager * data, Dir_Manager * dir_master, wstring word
 	for (unsigned int i = 0; i < group_name_size; i++) {
 		tmp = Get_Group_Data(data, dir_master, group_name[i]);
 		unsigned int tmp_size = tmp.size();
+		
 		for (unsigned int j = 0; j < tmp_size; j++) {
-			similarity.push_back(make_pair(Return_similarity(word, tmp[j][0].get_raw()),j));
+			similarity.push_back(make_pair(Return_similarity(word, tmp[j][0].get_raw()),result.size()));
 			result.push_back(tmp[j]);
 		}
 		tmp.clear();
@@ -1528,6 +1532,8 @@ vector<wstring> Group(Dir_Manager * dir_master)
 {
 	vector<wstring> file_loc;
 
+	dir_master->Root2bound();
+
 	if (dir_master->Find_dir(L"Voca", true) != -1) {
 		file_loc = dir_master->Get_Root_file();
 		unsigned int file_size = file_loc.size();
@@ -1545,10 +1551,14 @@ vector<Array> Get_Group_Data(Data_Manager * data, Dir_Manager * dir_master, wstr
 	vector<int> idxs;
 	vector<Array> result;
 
+	dir_master->Root2bound();
+
 	if (dir_master->Find_dir(L"Voca", true) != -1) {
 		idxs = data->Read(dir_master->Get_Root_Path(true) + group_name + L".txt", group_name);
 		result = data->get(idxs);
 		data->clear_all();
+
+		dir_master->Root2bound();
 	}
 
 	return result;
@@ -1736,8 +1746,13 @@ void Setting_Initialize(Data_Manager * data, Dir_Manager * dir_master)
 	vector<int> ids;
 	wstring group_name;
 
+	dir_master->Root2bound();
+
 	if (dir_master->Find_dir(L"Setting", true) != -1) {
 		ids = data->Read(dir_master->Get_Root_Path(true) + L"Setting_Info.txt", L"Setting");
+
+		dir_master->Root2bound();
+
 		if (ids.size() != 0) {
 			setting = data->getq(ids[0]);
 			data->clear_all();
@@ -1754,13 +1769,14 @@ void Setting_Initialize(Data_Manager * data, Dir_Manager * dir_master)
 			setting[3] = Encoder(L"000000");
 			setting[4] = true; // setting is saved
 		}
-
-		dir_master->Root2bound();
+		
 	}
 }
 
 void Setting_Save(Data_Manager * data, Dir_Manager * dir_master)
 {
+	dir_master->Root2bound();
+
 	if (dir_master->Find_dir(L"Setting", true) != -1) {
 
 		if (stoi(setting[4].get_raw()) == true) {

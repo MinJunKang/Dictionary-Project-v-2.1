@@ -197,8 +197,12 @@ inline void Array::Push_Value(T & data, int idx) {
 	try {
 		if (idx >= this->size || idx < 0)
 			throw runtime_error(":MA0011");
-		if (decoder[idx] != declare_type(data))
+		if (decoder[idx] != declare_type(data)) {
+			cout << (unsigned int)declare_type(data) << endl;
+			cout << (unsigned int)decoder[idx] << endl;
+			_sleep(2000);
 			throw runtime_error(":MA0012");
+		}
 	}
 	catch (exception& e) {
 		wstring error = name + To_wstr(e.what());
