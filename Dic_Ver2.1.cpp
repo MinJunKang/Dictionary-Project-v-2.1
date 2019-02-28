@@ -40,8 +40,10 @@ void Phase_1(Data_Manager * data, Dir_Manager * dir_master)
 			setting[0] = group_name;
 		}
 		if (dir_master->Find_dir(L"Voca", true) != -1) {
-			if (dir_master->IsFile(dir_master->Get_Root_Path(true) + setting[0].get_raw() + L".txt") == true)
-				setting[0] >> group_name;
+			if (dir_master->IsFile(dir_master->Get_Root_Path(true) + setting[0].get_raw() + L".txt") == true) {
+				group_name = setting[0].get_raw();
+				setting[0] = group_name;
+			}
 			else {
 				group_name = Group(dir_master)[0];
 				setting[0] = group_name;
@@ -166,6 +168,324 @@ void Phase_3(Data_Manager * data, Dir_Manager * dir_master)
 	}
 }
 
+bool card_setting_UI(Data_Manager * data, Dir_Manager * dir_master, Array & setting)
+{
+	Design_Tool main_console(0.8, DEFAULT_CMD_Y, DEFAULT_TEXT_SIZE, Create_UI_Info(L" ※ 설  정", 30, 2, 40, 28));
+	_2D_pos pos;
+	vector<int> choice;
+	bool if_changed = false;
+
+	int direction, include_record, type;
+	vector<wstring> groups;
+	setting[0] >> direction;
+	setting[1] >> include_record;
+	setting[2] >> type;
+
+    unsigned int setting_size = setting.get_size();
+	for (unsigned int i = 3; i < setting_size; i++) {
+		groups.push_back(setting[i].get_raw());
+	}
+
+	/* (forward, backward, random) */
+	pos.x = 34; pos.y = 8;
+	main_console.AddMessage(L" 방향 : ", pos);
+	pos.x = 42; pos.y = 7;
+	unsigned int idx_1;
+	if(direction == 0)
+		idx_1 = main_console.Addbutton(L" 순방향", pos);
+	else if (direction == 1)
+		idx_1 = main_console.Addbutton(L" 역방향", pos);
+	else if(direction == 2)
+		idx_1 = main_console.Addbutton(L" 무작위", pos);
+
+	/* include record */
+	pos.x = 34; pos.y = 12;
+	main_console.AddMessage(L" 외운 단어 포함 : ", pos);
+	pos.x = 52; pos.y = 11;
+	unsigned int idx_2;
+	if (include_record == 0)
+		idx_2 = main_console.Addbutton(L"   ", pos);
+	else if (include_record == 1)
+		idx_2 = main_console.Addbutton(L" √", pos);
+
+	/* Type */
+	pos.x = 34; pos.y = 16;
+	main_console.AddMessage(L" 표현 방식 : ", pos);
+	pos.x = 47; pos.y = 15;
+	unsigned int idx_3;
+	if (type == 0)
+		idx_3 = main_console.Addbutton(L" 한 - 영", pos);
+	else if (type == 1)
+		idx_3 = main_console.Addbutton(L" 영 - 한", pos);
+	else if (type == 2)
+		idx_3 = main_console.Addbutton(L" 무작위", pos);
+
+	/* Groups */
+	pos.x = 34; pos.y = 20;
+	main_console.AddMessage(L" 포함된 그룹 : ", pos);
+	pos.x = 49; pos.y = 19;
+	unsigned int idx_4 = main_console.Addbutton(L" 보기", pos);
+	pos.x = 56; pos.y = 19;
+	unsigned int idx_5 = main_console.Addbutton(L" 수정", pos);
+	pos.x = 42; pos.y = 22;
+	unsigned int idx_exit = main_console.Addbutton(L"\n  (×)나가기\n ", pos, Color::BROWN);
+
+	while (1) {
+		choice = main_console.Printdesign();
+
+		if (choice[0] == idx_exit)
+			break;
+		else if (choice[0] == idx_1) {
+			pos.x = 42; pos.y = 7;
+			main_console.DeleteUI(idx_1);
+			if (direction == 0) {
+				idx_1 = main_console.Addbutton(L" 역방향", pos);
+				direction = 1;
+			}
+			else if (direction == 1) {
+				idx_1 = main_console.Addbutton(L" 무작위", pos);
+				direction = 2;
+			}
+			else if (direction == 2) {
+				idx_1 = main_console.Addbutton(L" 순방향", pos);
+				direction = 0;
+			}
+		}
+		else if (choice[0] == idx_2) {
+			pos.x = 52; pos.y = 11;
+			main_console.DeleteUI(idx_2);
+			if (include_record == 0) {
+				idx_2 = main_console.Addbutton(L" √", pos);
+				include_record = 1;
+			}
+			else {
+				idx_2 = main_console.Addbutton(L"   ", pos);
+				include_record = 0;
+			}
+		}
+		else if (choice[0] == idx_3) {
+			pos.x = 47; pos.y = 15;
+			main_console.DeleteUI(idx_3);
+			if (type == 0) {
+				idx_3 = main_console.Addbutton(L" 영 - 한", pos);
+				type = 1;
+			}
+			else if (type == 1) {
+				idx_3 = main_console.Addbutton(L" 무작위", pos);
+				type = 2;
+			}
+			else if (type == 2) {
+				idx_3 = main_console.Addbutton(L" 한 - 영", pos);
+				type = 0;
+			}
+		}
+		else if (choice[0] == idx_4) {
+			Show_Groups(groups);
+		}
+		else if (choice[0] == idx_5) {
+			if_changed = true;
+			groups = Group_Select(data, dir_master);
+			setting_size = 3 + groups.size();
+			setting.randn(1,setting_size);
+			setting[0] = direction;
+			setting[1] = include_record;
+			setting[2] = type;
+			
+			for (unsigned int i = 3; i < setting_size; i++) {
+				setting[i] = groups[i - 3];
+			}
+		}
+	}
+
+	setting[0] = direction;
+	setting[1] = include_record;
+	setting[2] = type;
+
+}
+
+void Show_Groups(vector<wstring> group_name)
+{
+	Design_Tool main_console(DEFAULT_CMD_X, DEFAULT_CMD_Y, DEFAULT_TEXT_SIZE, Create_UI_Info(L" 그룹 정보 ", 30, 2, 60, 28));
+	_2D_pos pos;
+	vector<int> choice;
+
+	unsigned int group_size = group_name.size();
+	wstring version_info = L"Easy Dictionary ver 2.1";
+
+	if (group_size != 0) {
+
+		int page_pos = 0;
+		unsigned int max_word = 5;
+		int page_max = (int)((group_size - 1) / max_word);
+		unsigned int idxs[5];
+		unsigned int idx_prev, idx_next, idx_conf;
+		unsigned int idx_page;
+
+		pos.y = 24; pos.x = 70;
+		idx_prev = main_console.Addbutton(L" ◀", pos);
+		pos.x = 84;
+		idx_next = main_console.Addbutton(L" ▶", pos);
+		pos.y = 24; pos.x = 54;
+		idx_conf = main_console.Addbutton(L" 뒤로 가기", pos);
+		pos.x = 33; pos.y = 7;
+		main_console.AddMessage(L" 버전 정보 : " + version_info, pos);
+		pos.x = 33; pos.y = 9;
+		main_console.AddMessage(L" 총 그룹 수 : " + to_wstring(group_size) + L"개", pos);
+		pos.x = 33; pos.y = 11;
+		main_console.AddMessage(L"---------------------------------------", pos);
+
+		while (1) {
+			pos.y = 25; pos.x = 76;
+			idx_page = main_console.AddMessage(L"Page " + to_wstring(page_pos + 1), pos, Color::GREEN);
+			unsigned int size = ((group_size - page_pos * max_word) > max_word) ? max_word : (group_size - page_pos * max_word);
+			for (unsigned int i = 0; i < max_word; i++) {
+				idxs[i] = 0;
+			}
+			pos.x = 33; pos.y = 13;
+			/* Make UI */
+			for (unsigned i = page_pos * max_word; i < page_pos * max_word + size; i++) {
+				idxs[i - page_pos * max_word] = main_console.AddMessage(L" 그룹 " + to_wstring(i + 1) + L" : " + group_name[i], pos);
+				pos.y += 2;
+			}
+			choice = main_console.Printdesign();
+			if (choice[0] == idx_prev) {
+				if (page_pos != 0)
+					page_pos--;
+			}
+			else if (choice[0] == idx_next) {
+				if (page_pos <= page_max - 1)
+					page_pos++;
+			}
+			else if (choice[0] == idx_conf) {
+				break;
+			}
+			for (unsigned int i = 0; i < max_word; i++) {
+				if (idxs[i] != 0) {
+					main_console.DeleteUI(idxs[i]);
+					idxs[i] = 0;
+				}
+			}
+			main_console.DeleteUI(idx_page);
+		}
+	}
+	else {
+		pos.y = 24; pos.x = 54;
+		main_console.Addbutton(L" 뒤로 가기", pos);
+		pos.x = 33; pos.y = 7;
+		main_console.AddMessage(L" 버전 정보 : " + version_info, pos);
+		pos.x = 33; pos.y = 9;
+		main_console.AddMessage(L" 총 그룹 수 : " + to_wstring(group_size) + L"개", pos);
+
+		main_console.Printdesign();
+	}
+}
+
+void Display_Word(vector<wstring> views, Array word)
+{
+	Design_Tool main_console(DEFAULT_CMD_X, DEFAULT_CMD_Y, DEFAULT_TEXT_SIZE, Create_UI_Info(L" 단어 정보 ", 30, 2, 60, 28));
+	_2D_pos pos;
+	vector<int> choice;
+
+	/* Calculate word, meaning, groupname */
+	unsigned int word_size = views.size();
+
+	/* Button */
+	pos.x = 55; pos.y = 23;
+	int idx_1 = main_console.Addbutton(L"  확 인 ", pos, Color::BROWN);
+
+	unsigned int meaning_size = word_size - 1;
+	unsigned int idx_prev, idx_next;
+	int idx_page;
+	int page_pos = 0;
+	unsigned int word_per_page = 5;
+	int idxs[5];
+	int page_num = (int)((meaning_size - 1) / word_per_page);
+
+	pos.y = 23; pos.x = 70;
+	idx_prev = main_console.Addbutton(L" ◀", pos);
+	pos.x = 84;
+	idx_next = main_console.Addbutton(L" ▶", pos);
+	pos.x = 33; pos.y = 6;
+	unsigned int idx_main = main_console.Addbutton(L"대표 단어 : " + word[0].get_raw(), pos);
+	pos.x = 33; pos.y = 10;
+	main_console.AddMessage(L" 단어 : " + views[0], pos);
+
+	while (1) {
+		unsigned int size = ((meaning_size - page_pos * word_per_page) >= word_per_page) ? word_per_page : (meaning_size - page_pos * word_per_page);
+		pos.y = 24; pos.x = 76;
+		idx_page = main_console.AddMessage(L"Page " + to_wstring(page_pos + 1), pos, Color::GREEN);
+		pos.x = 33; pos.y = 12;
+		for (unsigned int i = page_pos * word_per_page; i < (page_pos + 1) * word_per_page; i++) {
+			if (i < page_pos * word_per_page + size) {
+				idxs[i - page_pos * word_per_page] = main_console.AddMessage(L" 뜻 " + to_wstring(i + 1) + L" : " + views[i + 1], pos);
+				pos.y += 1;
+			}
+			else {
+				idxs[i - page_pos * word_per_page] = 0;
+			}
+		}
+
+		choice = main_console.Printdesign();
+
+		if (choice[0] == idx_1)
+			break;
+		else if (choice[0] == idx_prev && page_pos != 0)
+			page_pos--;
+		else if (choice[0] == idx_next && page_pos <= page_num - 1)
+			page_pos++;
+		else if (choice[0] == idx_main)
+			DisplayWord_v3n(word, L" 단어 정보");
+
+		for (unsigned int i = 0; i < word_per_page; i++) {
+			if (idxs[i] != 0) {
+				main_console.DeleteUI(idxs[i]);
+				idxs[i] = 0;
+			}
+		}
+		main_console.DeleteUI(idx_page);
+	}
+}
+
+wstring adapt_message(wstring message, unsigned int max_length) {
+	unsigned int len = message.length();
+	unsigned int count = 0;
+	bool if_over = false;
+	wchar_t buf[2];
+	char dest_buf[2];
+	buf[1] = L'\0';
+
+	if (max_length <= 3)
+		Print_Error(L"Dic_process", L"adapt_message_err");
+
+	for (unsigned int i = 0; i < len; i++) {
+		if (message[i] == L'\n' || i == len - 1) {
+			if (if_over) {
+				if (i == len - 1)
+					message = message.substr(0, i - count + 1);
+				else
+					message = message.substr(0, i - count + 1) + message.substr(i, len - count - 3);
+				if_over = false;
+			}
+			count = 0;
+		}
+		else {
+			if (count >= max_length - 1 && !if_over) {
+				message[i - 2] = L'.'; message[i - 1] = L'.'; message[i] = L'.';
+				if_over = true;
+				count = 0;
+			}
+			buf[0] = message[i];
+			wcstombs(dest_buf, buf, 2);
+			if (dest_buf[0] & 0x80) {
+				count += 2;
+			}
+			else
+				count++;
+		}
+	}
+	return message;
+}
+
 void Inform_Message(wstring Message)
 {
 	Design_Tool main_console(0.7, 0.7, DEFAULT_TEXT_SIZE, Create_UI_Info(L"  안내 사항", 20, 2, 40, 18));
@@ -184,6 +504,9 @@ bool Inform_Message_v2(wstring Message)
 	_2D_pos pos;
 	vector<int> choice;
 	int idx_1, idx_2;
+
+	Message = adapt_message(Message, 35);
+
 	pos.x = 25; pos.y = 7;
 	main_console.AddMessage(Message, pos);
 	pos.x = 25; pos.y = 13;
@@ -235,7 +558,7 @@ vector<wstring> Group_Select(Data_Manager * data, Dir_Manager * dir_master, unsi
 
 		while (1) {
 			pos.y = 25; pos.x = 76;
-			idx_page = main_console.AddMessage(L"Page " + to_wstring(page_pos), pos, Color::GREEN);
+			idx_page = main_console.AddMessage(L"Page " + to_wstring(page_pos + 1), pos, Color::GREEN);
 			unsigned int size = ((group_size - page_pos * max_word) > max_word) ? max_word : (group_size - page_pos * max_word);
 			for (unsigned int i = 0; i < max_word; i++) {
 				idxs[i] = 0;
@@ -244,9 +567,9 @@ vector<wstring> Group_Select(Data_Manager * data, Dir_Manager * dir_master, unsi
 			/* Make UI */
 			for (unsigned i = page_pos * max_word; i < page_pos * max_word + size; i++) {
 				if (if_select[i] == false)
-					idxs[i - page_pos * max_word] = main_console.Addbutton(L"그룹 " + to_wstring(i - page_pos * max_word + 1) + L" : " + groups[i], pos);
+					idxs[i - page_pos * max_word] = main_console.Addbutton(L"그룹 " + to_wstring(i + 1) + L" : " + groups[i], pos);
 				else
-					idxs[i - page_pos * max_word] = main_console.AddMessage(L"그룹 " + to_wstring(i - page_pos * max_word + 1) + L" : " + groups[i], pos);
+					idxs[i - page_pos * max_word] = main_console.AddMessage(L"그룹 " + to_wstring(i + 1) + L" : " + groups[i], pos);
 				pos.y += 3;
 			}
 			choice = main_console.Printdesign();
@@ -354,10 +677,10 @@ bool DisplayWord(wstring word, vector<wstring> meaning, wstring group_name)
 	vector<int> choice;
 	int idx_1, idx_2;
 	/* Button */
-	pos.x = 50; pos.y = 23;
-	idx_1 = main_console.Addbutton(L"  끝내기 ", pos, Color::BROWN);
+	pos.x = 54; pos.y = 23;
+	idx_1 = main_console.Addbutton(L"  다음으로 ", pos, Color::BROWN);
 	pos.x = 35; pos.y = 23;
-	idx_2 = main_console.Addbutton(L"  계속 입력 ", pos, Color::BROWN);
+	idx_2 = main_console.Addbutton(L"  다른 뜻 입력 ", pos, Color::BROWN);
 
 	unsigned int meaning_size = meaning.size();
 	unsigned int idx_prev, idx_next;
@@ -427,9 +750,7 @@ void DisplayWord_v2(Data_Manager * data, Dir_Manager * dir_master, Array word)
 	unsigned int word_size = word.get_size();
 
 	/* Get meaning part */
-	for (unsigned int i = 1; i < word_size; i++) {
-		if (word[i].type() != (unsigned int)Type::DEFAULT_TYPE)
-			break;
+	for (unsigned int i = 1; i < word_size - 3; i++) {
 		meaning.push_back(word[i].get_raw());
 	}
 
@@ -455,6 +776,7 @@ void DisplayWord_v2(Data_Manager * data, Dir_Manager * dir_master, Array word)
 	unsigned int exit = main_console.Addbutton(L" 확 인", pos);
 	pos.x = 84;
 	idx_next = main_console.Addbutton(L" ▶", pos);
+
 
 	while (1) {
 		unsigned int size = ((meaning_size - page_pos * word_per_page) >= word_per_page) ? word_per_page : (meaning_size - page_pos * word_per_page);
@@ -513,7 +835,7 @@ void DisplayWord_v2(Data_Manager * data, Dir_Manager * dir_master, Array word)
 		else {
 			for (unsigned int i = 0; i < word_per_page; i++) {
 				if (choice[0] == idxs[i]) {
-					if (Inform_Message_v2(L"뜻 " + meaning[i + page_pos * word_per_page] + L" 를 바꾸시겠습니까?")) {
+					if (Inform_Message_v2(L"뜻 : " + meaning[i + page_pos * word_per_page] + L"\n를 바꾸시겠습니까?")) {
 						tmp_meaning = Get_Input(L"새로운 뜻 입력", L"Enter를 입력하면 뜻이 삭제됩니다.");
 						meaning = change_meaning(meaning, tmp_meaning, i + page_pos * word_per_page);
 						wstring tmp_name = word[0].get_raw();
@@ -532,8 +854,9 @@ void DisplayWord_v2(Data_Manager * data, Dir_Manager * dir_master, Array word)
 						word[meaning_size + 3] = test_num;
 						
 						page_num = (int)(meaning_size / word_per_page);
+
+						if_changed = true;
 					}
-					if_changed = true;
 					break;
 				}
 			}
@@ -543,7 +866,9 @@ void DisplayWord_v2(Data_Manager * data, Dir_Manager * dir_master, Array word)
 			main_console.DeleteUI(idxs[i]);
 		}
 		main_console.DeleteUI(idx_page);
+
 	}
+
 	if (if_changed) {
 		words.push_back(word);
 		Revise_Data_v2(data, dir_master, words, word[meaning_size + 2].get_raw());
@@ -563,8 +888,6 @@ void DisplayWord_v3(Array word, wstring message, unsigned int idx)
 	for (unsigned int i = 1; i < word_size - 3; i++) {
 		meaning.push_back(word[i].get_raw());
 	}
-	/* Get the group name */
-	wstring group_name = word[word_size - 2].get_raw();
 
 	/* Button */
 	pos.x = 55; pos.y = 23;
@@ -587,7 +910,161 @@ void DisplayWord_v3(Array word, wstring message, unsigned int idx)
 	pos.x = 33; pos.y = 10;
 	main_console.AddMessage(L" 단어 : " + word[0].get_raw(), pos);
 	pos.x = 33; pos.y = 11;
-	main_console.AddMessage(L" 소속 그룹 : " + group_name, pos);
+	main_console.AddMessage(L" 소속 그룹 : " + word[meaning_size + 2].get_raw(), pos);
+
+	while (1) {
+		unsigned int size = ((meaning_size - page_pos * word_per_page) >= word_per_page) ? word_per_page : (meaning_size - page_pos * word_per_page);
+		pos.y = 24; pos.x = 76;
+		idx_page = main_console.AddMessage(L"Page " + to_wstring(page_pos + 1), pos, Color::GREEN);
+		pos.x = 33; pos.y = 12;
+		for (unsigned int i = page_pos * word_per_page; i < (page_pos + 1) * word_per_page; i++) {
+			if (i < page_pos * word_per_page + size) {
+				idxs[i - page_pos * word_per_page] = main_console.AddMessage(L" 뜻 " + to_wstring(i + 1) + L" : " + meaning[i], pos);
+				pos.y += 1;
+			}
+			else {
+				idxs[i - page_pos * word_per_page] = 0;
+			}
+		}
+
+		choice = main_console.Printdesign();
+
+		if (choice[0] == idx_1)
+			break;
+		else if (choice[0] == idx_prev && page_pos != 0)
+			page_pos--;
+		else if (choice[0] == idx_next && page_pos <= page_num - 1)
+			page_pos++;
+
+		for (unsigned int i = 0; i < word_per_page; i++) {
+			if (idxs[i] != 0) {
+				main_console.DeleteUI(idxs[i]);
+				idxs[i] = 0;
+			}
+		}
+		main_console.DeleteUI(idx_page);
+	}
+}
+
+bool DisplayWord_v4(Data_Manager * data, Dir_Manager * dir_master, Array word)
+{
+	Design_Tool main_console(DEFAULT_CMD_X, DEFAULT_CMD_Y, DEFAULT_TEXT_SIZE, Create_UI_Info(L"  단어 정보", 30, 2, 60, 28));
+	_2D_pos pos;
+	vector<int> choice;
+
+	/* Calculate word, meaning, groupname */
+	unsigned int word_size = word.get_size();
+	vector<wstring> meaning;
+	/* Get the meaning */
+	for (unsigned int i = 1; i < word_size - 3; i++) {
+		meaning.push_back(word[i].get_raw());
+	}
+
+	/* Button */
+	pos.x = 55; pos.y = 23;
+	int idx_1 = main_console.Addbutton(L"  확 인 ", pos, Color::BROWN);
+	pos.x = 35; pos.y = 23;
+	int idx_2 = main_console.Addbutton(L"  삭 제 ", pos, Color::BROWN);
+
+	unsigned int meaning_size = meaning.size();
+	unsigned int idx_prev, idx_next;
+	int idx_page;
+	int page_pos = 0;
+	unsigned int word_per_page = 5;
+	int idxs[5];
+	int page_num = (int)((meaning_size - 1) / word_per_page);
+
+	pos.y = 23; pos.x = 70;
+	idx_prev = main_console.Addbutton(L" ◀", pos);
+	pos.x = 84;
+	idx_next = main_console.Addbutton(L" ▶", pos);
+
+	pos.x = 33; pos.y = 6;
+	main_console.AddMessage(L" 단어 : " + word[0].get_raw(), pos);
+	pos.x = 33; pos.y = 8;
+	main_console.AddMessage(L" 소속 그룹 : " + word[meaning_size + 2].get_raw(), pos);
+	pos.x = 33; pos.y = 10;
+	main_console.AddMessage(L" 오답률 : " + to_wstring((int)(stod(word[meaning_size + 1].get_raw())*100)) + L"%", pos);
+	pos.x = 33; pos.y = 11;
+	main_console.AddMessage(L" 시험 횟수 : " + word[meaning_size + 3].get_raw() + L"회", pos);
+
+	while (1) {
+		unsigned int size = ((meaning_size - page_pos * word_per_page) >= word_per_page) ? word_per_page : (meaning_size - page_pos * word_per_page);
+		pos.y = 24; pos.x = 76;
+		idx_page = main_console.AddMessage(L"Page " + to_wstring(page_pos + 1), pos, Color::GREEN);
+		pos.x = 33; pos.y = 13;
+		for (unsigned int i = page_pos * word_per_page; i < (page_pos + 1) * word_per_page; i++) {
+			if (i < page_pos * word_per_page + size) {
+				idxs[i - page_pos * word_per_page] = main_console.AddMessage(L" 뜻 " + to_wstring(i + 1) + L" : " + meaning[i], pos);
+				pos.y += 1;
+			}
+			else {
+				idxs[i - page_pos * word_per_page] = 0;
+			}
+		}
+
+		choice = main_console.Printdesign();
+
+		if (choice[0] == idx_1)
+			break;
+		else if (choice[0] == idx_2) {
+			if (Inform_Message_v2(L"단어를 삭제하시겠습니까?")) {
+				Revise_Data_v4(data, dir_master, word);
+				return false;
+			}
+		}
+		else if (choice[0] == idx_prev && page_pos != 0)
+			page_pos--;
+		else if (choice[0] == idx_next && page_pos <= page_num - 1)
+			page_pos++;
+
+		for (unsigned int i = 0; i < word_per_page; i++) {
+			if (idxs[i] != 0) {
+				main_console.DeleteUI(idxs[i]);
+				idxs[i] = 0;
+			}
+		}
+		main_console.DeleteUI(idx_page);
+	}
+	return true;
+}
+
+void DisplayWord_v3n(Array word, wstring message)
+{
+	Design_Tool main_console(DEFAULT_CMD_X, DEFAULT_CMD_Y, DEFAULT_TEXT_SIZE, Create_UI_Info(L" 단어 정보 ", 30, 2, 60, 28));
+	_2D_pos pos;
+	vector<int> choice;
+
+	/* Calculate word, meaning, groupname */
+	unsigned int word_size = word.get_size();
+	vector<wstring> meaning;
+	/* Get the meaning */
+	for (unsigned int i = 1; i < word_size - 3; i++) {
+		meaning.push_back(word[i].get_raw());
+	}
+
+	/* Button */
+	pos.x = 55; pos.y = 23;
+	int idx_1 = main_console.Addbutton(L"  확 인 ", pos, Color::BROWN);
+
+	unsigned int meaning_size = meaning.size();
+	unsigned int idx_prev, idx_next;
+	int idx_page;
+	int page_pos = 0;
+	unsigned int word_per_page = 5;
+	int idxs[5];
+	int page_num = (int)((meaning_size - 1) / word_per_page);
+
+	pos.y = 23; pos.x = 70;
+	idx_prev = main_console.Addbutton(L" ◀", pos);
+	pos.x = 84;
+	idx_next = main_console.Addbutton(L" ▶", pos);
+	pos.x = 33; pos.y = 6;
+	main_console.AddMessage(message, pos);
+	pos.x = 33; pos.y = 10;
+	main_console.AddMessage(L" 단어 : " + word[0].get_raw(), pos);
+	pos.x = 33; pos.y = 11;
+	main_console.AddMessage(L" 소속 그룹 : " + word[meaning_size + 2].get_raw(), pos);
 
 	while (1) {
 		unsigned int size = ((meaning_size - page_pos * word_per_page) >= word_per_page) ? word_per_page : (meaning_size - page_pos * word_per_page);
@@ -712,10 +1189,6 @@ bool Locker()
 
 void Test(Data_Manager * data, Dir_Manager * dir_master, vector<Array> words)
 {
-	if (words.size() == 0) {
-		Inform_Message(L"해당되는 단어가 없습니다.");
-		return;
-	}
 
 	/* Test begin */
 	// 1st step : set the data sheet
@@ -739,20 +1212,42 @@ void Test(Data_Manager * data, Dir_Manager * dir_master, vector<Array> words)
 
 	/* 2nd step */
 	vector<Array> Test_data;
+	vector<Array> Test_word;
+	vector<unsigned int> test_data_idx;
 	for (unsigned int i = 0; i < word_num; i++) {
-		Array data(L"data" + to_wstring(i));
-		unsigned int word_size = words[i].get_size();
-		data.randn(1, 6);
-		data[0] = words[i][0].get_raw();
-		data[1] = words[i][word_size - 2].get_raw();
-		data[2] = stod(words[i][word_size - 3].get_raw());
-		data[3] = stol(words[i][word_size - 1].get_raw());
-		Test_data.push_back(data);
+		if (words[i].get_size() != 4) { // if there is no meaning
+			Array data(L"data" + to_wstring(i));
+			unsigned int word_size = words[i].get_size();
+			data.randn(1, 6);
+			data[0] = words[i][0].get_raw();
+			data[1] = words[i][word_size - 2].get_raw();
+			data[2] = stod(words[i][word_size - 3].get_raw());
+			data[3] = stol(words[i][word_size - 1].get_raw());
+			Test_data.push_back(data);
+			Test_word.push_back(words[i]);
+			test_data_idx.push_back(i);
+		}
+	}
+	unsigned int test_data_size = Test_data.size();
+	words.clear();
+
+	/* If there is nothing to test */
+	if (test_data_size == 0) {
+		Inform_Message(L"해당되는 단어가 없습니다.");
+		return;
+	}
+	else {
+		/* random shuffle the data */
+		std::random_shuffle(test_data_idx.begin(), test_data_idx.end());
 	}
 
 	/* 3rd step */
+	/* Also check if the random shift or not */
+	int question_way = -1;
+	Choose_Test_Style(question_way);
+
 	if(stoi(setting[2].get_raw()) == true)
-		Inform_Message(L" 단어 시험이 곧 시작됩니다. \n 시간제한은 " + setting[1].get_raw() + L" 분 입니다.");
+		Inform_Message(L" 단어 시험이 곧 시작됩니다. \n 시간제한은 " + setting[1].get_raw() + L" 초 입니다.");
 	else
 		Inform_Message(L" 단어 시험이 곧 시작됩니다. \n 시간제한은 없습니다.");
 
@@ -760,7 +1255,6 @@ void Test(Data_Manager * data, Dir_Manager * dir_master, vector<Array> words)
 	Design_Tool main_console(0.7, 0.7, DEFAULT_TEXT_SIZE, Create_UI_Info(L"단어 시험지", 20, 2, 40, 18));
 	_2D_pos pos;
 	vector<int> choice; wstring answer;
-	unsigned int question_way;
 	unsigned int idx_msg, idx_msg_2;
 	bool if_timer = stoi(setting[2].get_raw());
 
@@ -768,26 +1262,32 @@ void Test(Data_Manager * data, Dir_Manager * dir_master, vector<Array> words)
 	Write_Time(stoi(setting[1].get_raw()));
 
 	/* Test begin */
-	for (unsigned int i = 0; i < word_num; i++) {
+	for (unsigned int i = 0; i < test_data_size; i++) {
 
-		/* Pick the question way */
-		unsigned int word_size = words[i].get_size();
-		if (rand() % 2 == 1)
+		unsigned int word_size = Test_word[test_data_idx[i]].get_size();
+
+		/* Pick the question way if the way is random */
+		if (question_way == -1) {
+			if (rand() % 2 == 1)
+				question_way = rand() % (word_size - 4) + 1;
+			else
+				question_way = 0;
+		}
+		else if (question_way != 0) {
 			question_way = rand() % (word_size - 4) + 1;
-		else
-			question_way = 0;
+		}
 
 		/* Create Question */
 		pos.x = 24; pos.y = 9;
 		if (question_way == 0) {
-			idx_msg = main_console.AddMessage(L"단어 : " + words[i][0].get_raw(), pos);
+			idx_msg = main_console.AddMessage(L"단어 : " + Test_word[test_data_idx[i]][0].get_raw(), pos);
 			pos.y += 2;
-			idx_msg_2 = main_console.AddMessage(L"뜻을 입력하세요.",pos);
+			idx_msg_2 = main_console.AddMessage(L"뜻을 입력하세요.(Enter는 종료)",pos);
 		}
 		else {
-			idx_msg = main_console.AddMessage(L"뜻 : " + words[i][question_way].get_raw(), pos);
+			idx_msg = main_console.AddMessage(L"뜻 : " + Test_word[test_data_idx[i]][question_way].get_raw(), pos);
 			pos.y += 2;
-			idx_msg_2 = main_console.AddMessage(L"단어를 입력하세요.",pos);
+			idx_msg_2 = main_console.AddMessage(L"단어를 입력하세요.(Enter는 종료)",pos);
 		}
 
 		if (if_timer) {
@@ -803,12 +1303,35 @@ void Test(Data_Manager * data, Dir_Manager * dir_master, vector<Array> words)
 			/* Get exit code */
 			GetExitCodeProcess(tmp.hProcess, &ExitCode);
 
+			/* Check if the answer is enter */
+			if (answer == L"") {
+
+				/* Clear all the message */
+				main_console.DeleteUI(idx_msg);
+				main_console.DeleteUI(idx_msg_2);
+
+				break;
+			}
+
 			/* Check the answer */
-			Check_Test(words, i, answer, (bool)ExitCode, Test_data, question_way);
+			Check_Test(Test_word, test_data_idx[i], answer, (bool)ExitCode, Test_data, question_way);
 		}
 		else {
+			/* Create Question */
+			choice = main_console.Printdesign(0, true, &answer);
+
+			/* Check if the answer is enter */
+			if (answer == L"") {
+
+				/* Clear all the message */
+				main_console.DeleteUI(idx_msg);
+				main_console.DeleteUI(idx_msg_2);
+
+				break;
+			}
+
 			/* Check the answer */
-			Check_Test(words, i, answer, false, Test_data, question_way);
+			Check_Test(Test_word, test_data_idx[i], answer, false, Test_data, question_way);
 		}
 
 		/* Clear all the message */
@@ -827,16 +1350,53 @@ void Test(Data_Manager * data, Dir_Manager * dir_master, vector<Array> words)
 	}
 
 	/* 6th step */
-	for (unsigned int i = 0; i < word_num; i++) {
+	for (unsigned int i = 0; i < test_data_size; i++) {
 		unsigned int result = stoi(Test_data[i][4].get_raw());
-		unsigned int word_size = words[i].get_size();
-		unsigned int test_num = stoi(words[i][word_size - 1].get_raw());
-		double error = stod(words[i][word_size - 3].get_raw());
+		unsigned int word_size = Test_word[i].get_size();
+		unsigned int test_num = stoi(Test_word[i][word_size - 1].get_raw());
+		double error = stod(Test_word[i][word_size - 3].get_raw());
 		if (result != 2) {
-			words[i][word_size - 3] = (double)((error * test_num + !result) / (test_num + 1));
-			words[i][word_size - 1] = test_num + 1;
+			Test_word[i][word_size - 3] = (double)((error * test_num + !result) / (test_num + 1));
+			Test_word[i][word_size - 1] = test_num + 1;
 		}
-		Revise_Data_v3(data, dir_master, words[i]);
+		Revise_Data_v3(data, dir_master, Test_word[i]);
+	}
+
+	/* Alarm */
+	Inform_Message(L" 시험이 종료되었습니다.");
+}
+
+void Choose_Test_Style(int & question_way)
+{
+	Design_Tool main_console(0.8, 0.8, DEFAULT_TEXT_SIZE, Create_UI_Info(L" 시험 유형 선택", 24, 2, 50, 21));
+	_2D_pos pos;
+	vector<int> choice;
+
+	pos.x = 26; pos.y = 9;
+	main_console.Addbutton(L" 1. 한 - 영 시험 ex) 우유 - milk ", pos);
+	pos.x = 26; pos.y = 13;
+	main_console.Addbutton(L" 2. 영 - 한 시험 ex) milk - 우유 ", pos);
+	pos.x = 26; pos.y = 17;
+	main_console.Addbutton(L" 3. 랜 덤 시험 (1,2 방식 랜덤) ", pos);
+
+	pos.x = 26; pos.y = 7;
+	main_console.AddMessage(L" 시험 유형을 선택하세요.", pos);
+
+	choice = main_console.Printdesign();
+
+	switch (choice[0]) {
+	case 1:
+		question_way = 1;
+		Inform_Message(L"한 - 영 시험방식이 선택되었습니다.");
+		break;
+	case 2:
+		question_way = 0;
+		Inform_Message(L"영 - 한 시험방식이 선택되었습니다.");
+		break;
+	default:
+		question_way = -1;
+		Inform_Message(L"랜 덤 시험방식이 선택되었습니다.");
+		break;
 	}
 }
 
@@ -847,11 +1407,15 @@ void Set_Timer()
 	wstring input;
 	unsigned int new_time;
 
-	pos.x = 24; pos.y = 8;
-	main_console.AddMessage(L" 현재 설정된 시간은 " + setting[1].get_raw() + L"초 입니다.", pos);
+	pos.x = 22; pos.y = 8;
+	if(stod(setting[1].get_raw()) != 0)
+		main_console.AddMessage(L" 현재 설정된 시간은 " + setting[1].get_raw() + L"초 입니다.", pos);
+	else
+		main_console.AddMessage(L" 시간제한 없음으로 설정되어 있습니다.", pos);
+
 	pos.y += 2;
-	main_console.AddMessage(L" 시간 설정은 60초 이내로 가능합니다.", pos);
-	pos.y += 2;
+	main_console.AddMessage(L" 시간 설정은 60초 이내로 가능합니다.\n(시간제한을 없애려면 0을 입력하세요)", pos);
+	pos.y += 4;
 	main_console.AddMessage(L" 뒤로 가려면 \n Enter를 누르세요", pos);
 
 	while (1) {
@@ -860,11 +1424,19 @@ void Set_Timer()
 		if (input.length() != 0) {
 			new_time = stoi(input);
 			if (new_time >= 60 || new_time == 0) {
-				Inform_Message(L" 60초 이내로 설정해주세요");
+				if (new_time == 0 && Inform_Message_v2(L"시간제한을 없앨까요?")) {
+					setting[1] = new_time;
+					setting[2] = false;
+					break;
+				}
+				else
+					Inform_Message(L" 60초 이내로 설정해주세요");
+
 				continue;
 			}
 			else {
 				setting[1] = new_time;
+				setting[2] = true;
 				Inform_Message(L" 변경된 시간은 " + setting[1].get_raw() + L"초 입니다.");
 				break;
 			}
@@ -943,7 +1515,7 @@ selection:
 	if (group_size != 0) {
 		while (1) {
 			pos.y = 25; pos.x = 76;
-			idx_page = main_console.AddMessage(L"Page " + to_wstring(page_pos), pos, Color::GREEN);
+			idx_page = main_console.AddMessage(L"Page " + to_wstring(page_pos + 1), pos, Color::GREEN);
 			unsigned int size = ((group_size - page_pos * max_word) > max_word) ? max_word : (group_size - page_pos * max_word);
 			for (unsigned int i = 0; i < max_word; i++) {
 				idxs[i] = 0;
@@ -951,7 +1523,7 @@ selection:
 			pos.x = 33; pos.y = 9;
 			/* Make UI */
 			for (unsigned i = page_pos * max_word; i < page_pos * max_word + size; i++) {
-				idxs[i - page_pos * max_word] = main_console.AddMessage(L" 그룹 " + to_wstring(i - page_pos * max_word + 1) + L" : " + groups[i], pos);
+				idxs[i - page_pos * max_word] = main_console.AddMessage(L" 그룹 " + to_wstring(i + 1) + L" : " + groups[i], pos);
 				pos.y += 2;
 			}
 			choice = main_console.Printdesign();
@@ -993,15 +1565,18 @@ selection:
 		if (Inform_Message_v2(L"모든 시험 정보를 삭제할까요? \n에러율, 시험횟수 자료들이 \n모두 초기화됩니다.")) {
 			if (dir_master->Find_dir(L"Voca", true) != -1) {
 
+				wstring root_path = dir_master->Get_Root_Path(true);
+
 				for (unsigned int i = 0; i < group_size; i++) {
 					words = Get_Group_Data(data, dir_master, groups[i]);
 					unsigned int word_num = words.size();
+					
 					for (unsigned int j = 0; j < word_num; j++) {
 						unsigned int word_size = words[j].get_size();
 						words[j][word_size - 3] = 0.0;
 						words[j][word_size - 1] = 0;
 					}
-					data->Write(dir_master->Get_Root_Path(true) + groups[i] + L".txt", words);
+					data->Write(root_path + groups[i] + L".txt", words);
 				}
 
 				dir_master->Root2bound();
@@ -1072,7 +1647,7 @@ void View_Info(Data_Manager * data, Dir_Manager * dir_master)
 
 		while (1) {
 			pos.y = 25; pos.x = 76;
-			idx_page = main_console.AddMessage(L"Page " + to_wstring(page_pos), pos, Color::GREEN);
+			idx_page = main_console.AddMessage(L"Page " + to_wstring(page_pos + 1), pos, Color::GREEN);
 			unsigned int size = ((group_size - page_pos * max_word) > max_word) ? max_word : (group_size - page_pos * max_word);
 			for (unsigned int i = 0; i < max_word; i++) {
 				idxs[i] = 0;
@@ -1080,7 +1655,7 @@ void View_Info(Data_Manager * data, Dir_Manager * dir_master)
 			pos.x = 33; pos.y = 11;
 			/* Make UI */
 			for (unsigned i = page_pos * max_word; i < page_pos * max_word + size; i++) {
-				idxs[i - page_pos * max_word] = main_console.Addbutton(L"그룹 " + to_wstring(i - page_pos * max_word + 1) + L" : " + groups[i], pos);
+				idxs[i - page_pos * max_word] = main_console.Addbutton(L"그룹 " + to_wstring(i + 1) + L" : " + groups[i], pos);
 				pos.y += 3;
 			}
 			choice = main_console.Printdesign();
@@ -1158,13 +1733,15 @@ void Set_Password()
 
 void Show_Group_Info(Data_Manager * data, Dir_Manager * dir_master, wstring group_name)
 {
-	Design_Tool main_console(0.8, 0.8, DEFAULT_TEXT_SIZE, Create_UI_Info(L"그룹 정보", 20, 2, 50, 20));
+	Design_Tool main_console(0.8, 0.9, DEFAULT_TEXT_SIZE, Create_UI_Info(L"그룹 정보", 20, 2, 50, 25));
 	_2D_pos pos;
 
 	unsigned int test_num_sum = 0;
 	double error_average = 0;
 	unsigned int word_num = 0;
 	vector<Array> words;
+	unsigned int idx_1, idx_2;
+	vector<int> choice;
 
 	/* Get the words of group */
 	words = Get_Group_Data(data, dir_master, group_name);
@@ -1191,10 +1768,22 @@ void Show_Group_Info(Data_Manager * data, Dir_Manager * dir_master, wstring grou
 	main_console.AddMessage(L" 총 시험 친 횟수 : " + to_wstring(test_num_sum) + L" 회", pos);
 	pos.y += 2;
 	main_console.AddMessage(L" 평균 시험 오답률 : " + to_wstring((int)(error_average * 100)) + L"%", pos);
-	pos.x = 41; pos.y = 16;
-	main_console.Addbutton(L" 확  인 ", pos);
-
-	main_console.Printdesign();
+	pos.x = 26;
+	if (word_num != 0) {
+		pos.y = 18;
+		idx_1 = main_console.Addbutton(L"  단어 보기 ", pos);
+	}
+	else {
+		pos.y = 19;
+		idx_1 = main_console.AddMessage(L"  단어 보기(0개) ", pos, Color::BROWN);
+	}
+	pos.x = 50; pos.y = 18;
+	idx_2 = main_console.Addbutton(L"  뒤로 가기 ", pos);
+	choice = main_console.Printdesign();
+	if (choice[0] == idx_1)
+		Show_Group_word(data, dir_master, group_name);
+	else
+		return;
 }
 
 void Select_Add_Group(Data_Manager * data, Dir_Manager * dir_master)
@@ -1270,7 +1859,7 @@ selection:
 	if (group_size != 0) {
 		while (1) {
 			pos.y = 25; pos.x = 76;
-			idx_page = main_console.AddMessage(L"Page " + to_wstring(page_pos), pos, Color::GREEN);
+			idx_page = main_console.AddMessage(L"Page " + to_wstring(page_pos + 1), pos, Color::GREEN);
 			unsigned int size = ((group_size - page_pos * max_word) > max_word) ? max_word : (group_size - page_pos * max_word);
 			for (unsigned int i = 0; i < max_word; i++) {
 				idxs[i] = 0;
@@ -1278,7 +1867,7 @@ selection:
 			pos.x = 33; pos.y = 9;
 			/* Make UI */
 			for (unsigned i = page_pos * max_word; i < page_pos * max_word + size; i++) {
-				idxs[i - page_pos * max_word] = main_console.Addbutton(L" 그룹 " + to_wstring(i - page_pos * max_word + 1) + L" : " + groups[i], pos);
+				idxs[i - page_pos * max_word] = main_console.Addbutton(L" 그룹 " + to_wstring(i + 1) + L" : " + groups[i], pos);
 				pos.y += 3;
 			}
 			choice = main_console.Printdesign();
@@ -1356,6 +1945,87 @@ selection:
 			goto selection;
 		}
 	}
+}
+
+void Show_Group_word(Data_Manager * data, Dir_Manager * dir_master, wstring group_name)
+{
+	/* Get the group's word data */
+	vector<Array> words = Get_Group_Data(data, dir_master, group_name);
+
+	unsigned int word_size = words.size();
+
+	if (word_size != 0) {
+
+		Design_Tool main_console(DEFAULT_CMD_X, DEFAULT_CMD_Y, DEFAULT_TEXT_SIZE, Create_UI_Info(L"  그룹 " + group_name + L" 정보", 30, 2, 60, 28));
+		_2D_pos pos;
+		vector<int> choice;
+
+		int page_pos = 0;
+		unsigned int max_word = 5;
+		int page_max = (int)((word_size - 1) / max_word);
+		unsigned int idxs[5];
+		unsigned int idx_prev, idx_next, idx_conf;
+		unsigned int idx_page;
+		unsigned int count_picked = 0;
+
+		pos.y = 24; pos.x = 70;
+		idx_prev = main_console.Addbutton(L" ◀", pos);
+		pos.x = 84;
+		idx_next = main_console.Addbutton(L" ▶", pos);
+		pos.y = 24; pos.x = 54;
+		idx_conf = main_console.Addbutton(L"뒤로 가기", pos);
+
+		while (1) {
+			pos.y = 25; pos.x = 76;
+			idx_page = main_console.AddMessage(L"Page " + to_wstring(page_pos + 1), pos, Color::GREEN);
+			unsigned int size = ((word_size - page_pos * max_word) > max_word) ? max_word : (word_size - page_pos * max_word);
+			for (unsigned int i = 0; i < max_word; i++) {
+				idxs[i] = 0;
+			}
+			pos.x = 33; pos.y = 6;
+			/* Make UI */
+			for (unsigned i = page_pos * max_word; i < page_pos * max_word + size; i++) {
+				idxs[i - page_pos * max_word] = main_console.Addbutton(L"단어 " + to_wstring(i + 1) + L" : " + words[i][0].get_raw(), pos);
+				pos.y += 3;
+			}
+			choice = main_console.Printdesign();
+			if (choice[0] == idx_prev) {
+				if (page_pos != 0)
+					page_pos--;
+			}
+			else if (choice[0] == idx_next) {
+				if (page_pos <= page_max - 1)
+					page_pos++;
+			}
+			else if (choice[0] == idx_conf) {
+				break;
+			}
+			else {
+				for (unsigned int i = 0; i < max_word; i++) {
+					if (idxs[i] == choice[0]) {
+						if (DisplayWord_v4(data,dir_master,words[i + page_pos * max_word]) == false) {
+							/* if the word is deleted */
+							words = Get_Group_Data(data, dir_master, group_name);
+							word_size = words.size();
+							page_max = (int)((word_size - 1) / max_word);
+						}
+						break;
+					}
+				}
+			}
+			for (unsigned int i = 0; i < max_word; i++) {
+				if (idxs[i] != 0) {
+					main_console.DeleteUI(idxs[i]);
+					idxs[i] = 0;
+				}
+			}
+			main_console.DeleteUI(idx_page);
+		}
+
+	}
+	else
+		Inform_Message(L" 그룹에 단어가 없습니다.");
+
 }
 
 vector<Array> Search(Data_Manager * data, Dir_Manager * dir_master, wstring word, vector<wstring> group_name)
@@ -1504,24 +2174,26 @@ Array Data2Array(wstring word, vector<wstring> meaning, double error_rate, wstri
 
 void Create_Group(Data_Manager * data, Dir_Manager * dir_master,wstring group_name)
 {
-	dir_master->Update_pause();
+	//dir_master->Update_pause();
 	if (dir_master->Find_dir(L"Voca", true) != -1) {
 		data->Write(dir_master->Get_Root_Path(true) + group_name + L".txt");
 		dir_master->Root2bound();
 	}
-	dir_master->Update_begin();
+	//dir_master->Update_begin();
+	dir_master->Update();
 }
 
 void Delete_Group(Data_Manager * data, Dir_Manager * dir_master, wstring group_name)
 {
 	int result = -1;
-	dir_master->Update_pause();
+	//dir_master->Update_pause();
 	if (dir_master->Find_dir(L"Voca", true) != -1) {
 		wstring file_path = dir_master->Get_Root_Path(true) + group_name + L".txt";
 		result = remove(To_str(file_path).c_str());
 		dir_master->Root2bound();
 	}
-	dir_master->Update_begin();
+	//dir_master->Update_begin();
+	dir_master->Update();
 	if (result == -1)
 		Inform_Message(group_name + L" 삭제 실패!!");
 	else
@@ -1555,7 +2227,17 @@ vector<Array> Get_Group_Data(Data_Manager * data, Dir_Manager * dir_master, wstr
 
 	if (dir_master->Find_dir(L"Voca", true) != -1) {
 		idxs = data->Read(dir_master->Get_Root_Path(true) + group_name + L".txt", group_name);
+		
 		result = data->get(idxs);
+
+		unsigned int result_size = result.size();
+
+		for (unsigned int i = 0; i < result_size; i++) {
+			unsigned int word_size = result[i].get_size();
+			if (result[i][word_size - 2].get_raw() != group_name)
+				result[i][word_size - 2] = group_name;
+		}
+
 		data->clear_all();
 
 		dir_master->Root2bound();
@@ -1568,11 +2250,15 @@ void Revise_Data(Data_Manager * data, Dir_Manager * dir_master, vector<Array> in
 {
 	vector<Array> result;
 	vector<int> idxs;
-	vector<bool> if_revise;
 	
 	unsigned int input_size = input.size();
+
+	dir_master->Root2bound();
+
+	/* let know if the word is overlapped or not */
+	bool * if_used = new bool[input_size];
 	for (unsigned int i = 0; i < input_size; i++) {
-		if_revise.push_back(false);
+		if_used[i] = false;
 	}
 
 	if (dir_master->Find_dir(L"Voca", true) != -1) {
@@ -1582,46 +2268,50 @@ void Revise_Data(Data_Manager * data, Dir_Manager * dir_master, vector<Array> in
 		for (unsigned int i = 0; i < result_size; i++) {
 			for (unsigned int j = 0; j < input_size; j++) {
 				if (result[i][0] == input[j][0]) {
-					if_revise[j] = data->revise(idxs[i], combine(result[i], input[j]));
-					
+					if_used[j] = true;
+					data->revise(idxs[i], combine(result[i], input[j]));
 				}
 			}
 		}
 
+		/* if the word is not used, then add it */
 		for (unsigned int i = 0; i < input_size; i++) {
-			if (if_revise[i] == false)
+			if (if_used[i])
+				continue;
+			else
 				data->putq(input[i]);
 		}
+
 		data->Write(dir_master->Get_Root_Path(true) + group_name + L".txt");
 		data->clear_all();
 		result.clear();
 		input.clear();
 	}
+
+	delete if_used;
 }
 
 void Revise_Data_v2(Data_Manager * data, Dir_Manager * dir_master, vector<Array> input, wstring group_name)
 {
 	vector<Array> result;
 	vector<int> idxs;
-	vector<bool> if_revise;
 
 	unsigned int input_size = input.size();
-	for (unsigned int i = 0; i < input_size; i++) {
-		if_revise.push_back(false);
-	}
+
+	dir_master->Root2bound();
 
 	if (dir_master->Find_dir(L"Voca", true) != -1) {
+
 		idxs = data->Read(dir_master->Get_Root_Path(true) + group_name + L".txt", group_name);
 		result = data->get(idxs);
 		unsigned int result_size = result.size();
 		for (unsigned int i = 0; i < result_size; i++) {
 			for (unsigned int j = 0; j < input_size; j++) {
 				if (result[i][0] == input[j][0]) {
-					if_revise[j] = data->revise(idxs[i], input[j]);
+					data->revise(idxs[i], input[j]);
 				}
 			}
 		}
-
 		data->Write(dir_master->Get_Root_Path(true) + group_name + L".txt");
 		data->clear_all();
 		result.clear();
@@ -1638,6 +2328,8 @@ void Revise_Data_v3(Data_Manager * data, Dir_Manager * dir_master, Array input)
 	unsigned int input_size = input.get_size();
 	wstring group_name = input[input_size - 2].get_raw();
 
+	dir_master->Root2bound();
+
 	if (dir_master->Find_dir(L"Voca", true) != -1) {
 		idxs = data->Read(dir_master->Get_Root_Path(true) + group_name + L".txt", group_name);
 		result = data->get(idxs);
@@ -1645,6 +2337,33 @@ void Revise_Data_v3(Data_Manager * data, Dir_Manager * dir_master, Array input)
 		for (unsigned int i = 0; i < result_size; i++) {
 			if (result[i][0] == input[0]) {
 				data->revise(idxs[i], input);
+			}
+		}
+
+		data->Write(dir_master->Get_Root_Path(true) + group_name + L".txt");
+		data->clear_all();
+		result.clear();
+		dir_master->Root2bound();
+	}
+}
+
+void Revise_Data_v4(Data_Manager * data, Dir_Manager * dir_master, Array input)
+{
+	vector<Array> result;
+	vector<int> idxs;
+
+	unsigned int input_size = input.get_size();
+	wstring group_name = input[input_size - 2].get_raw();
+
+	dir_master->Root2bound();
+
+	if (dir_master->Find_dir(L"Voca", true) != -1) {
+		idxs = data->Read(dir_master->Get_Root_Path(true) + group_name + L".txt", group_name);
+		result = data->get(idxs);
+		unsigned int result_size = result.size();
+		for (unsigned int i = 0; i < result_size; i++) {
+			if (result[i][0] == input[0]) {
+				data->erase(idxs[i]);
 			}
 		}
 
@@ -1966,8 +2685,10 @@ bool Check_Test(vector<Array> words, unsigned int idx, wstring answer, bool time
 			message = L" 답안 " + answer + L"는 오답입니다.";
 	}
 	if (timer == false) {
-		correctness = false;
-		message += L"\n 시간 제한안에 하지 못했습니다.";
+		if (stod(setting[2].get_raw()) == true) {
+			correctness = false;
+			message += L"\n 시간 제한안에 하지 못했습니다.";
+		}
 	}
 
 	unsigned int idx_num = word_idx.size();
@@ -2086,4 +2807,278 @@ double gaussianRandom(void) {
 	s = sqrt((-2 * log(s)) / s);
 
 	return v1 * s;
+}
+
+wstring basic_group()
+{
+	return setting[0].get_raw();
+}
+
+vector<Array> Forward_word(Data_Manager * data, Dir_Manager * dir_master, Array & setting, vector<unsigned int>  & word_idx, vector<bool> & check)
+{
+	/* get setting data */
+	unsigned int size_setting = setting.get_size();
+	unsigned int group_size = size_setting - 3;
+
+	vector<Array> result_word;
+	vector<Array> tmp;
+	vector<int> idxs;
+
+	/* Get the all relative words */
+	for (unsigned int i = 0; i < group_size; i++) {
+		tmp = Get_Group_Data(data, dir_master, setting[i + 3].get_raw());
+		unsigned int tmp_size = tmp.size();
+		for (unsigned int j = 0; j < tmp_size; j++) {
+			result_word.push_back(tmp[j]);
+		}
+	}
+
+	/* clear all the info */
+	tmp.clear();
+	word_idx.clear();
+	check.clear();
+
+	/* arrange the word idx*/
+	unsigned int word_size = result_word.size();
+	for (unsigned int i = 0; i < word_size; i++) {
+		word_idx.push_back(i);
+		check.push_back(false);
+	}
+
+	/* get all the check */
+	dir_master->Root2bound();
+	if (dir_master->Find_dir(L"QUICKCARD", true) != -1) {
+		idxs = data->Read(dir_master->Get_Root_Path(true) + L"DATA.txt", L"data");
+		tmp = data->get(idxs);
+		unsigned int tmp_size = tmp.size();
+		for (unsigned int i = 0; i < word_size; i++) {
+			for (unsigned int j = 0; j < tmp_size; j++) {
+				if (tmp[j].get_size() != 3) {
+					cout << i << endl;
+					continue;
+				}
+				else {
+					if (tmp[j][0].get_raw() == result_word[i][0].get_raw() && tmp[j][1].get_raw() == result_word[i][result_word[i].get_size() - 2].get_raw()) {
+						check[i] = (bool)stoi(tmp[j][2].get_raw());
+						break;
+					}
+				}
+			}
+		}
+
+		data->clear_all();
+		tmp.clear();
+		dir_master->Root2bound();
+	}
+
+	return result_word;
+}
+
+void Backward_word(Data_Manager * data, Dir_Manager * dir_master, Array word, bool check)
+{
+	vector<Array> result;
+	vector<int> idxs;
+	bool update = false;
+
+	unsigned int input_size = word.get_size();
+	wstring group_name = word[input_size - 2].get_raw();
+
+	dir_master->Root2bound();
+
+	if (dir_master->Find_dir(L"QUICKCARD", true) != -1) {
+		idxs = data->Read(dir_master->Get_Root_Path(true) + L"DATA.txt", L"data");
+		result = data->get(idxs);
+		unsigned int result_size = result.size();
+		for (unsigned int i = 0; i < result_size; i++) {
+			if (result[i].get_size() != 3)
+				data->erase(idxs[i]);
+			else if (result[i][0].get_raw() == word[0].get_raw() && result[i][1].get_raw() == group_name) {
+				Array new_data = result[i];
+				new_data[2] = check;
+				data->revise(idxs[i], new_data);
+				update = true;
+			}
+		}
+
+		if (update == false) {
+			Array new_data(L"new_data");
+			new_data.randn(1, 3);
+			new_data[0] = word[0].get_raw();
+			new_data[1] = group_name;
+			new_data[2] = check;
+			data->putq(new_data);
+		}
+
+		data->Write(dir_master->Get_Root_Path(true) + L"DATA.txt");
+		data->clear_all();
+		result.clear();
+		dir_master->Root2bound();
+	}
+}
+
+void arrange_idx(vector<unsigned int>& word_idx, int & present_pos, Array & setting)
+{
+	/* get setting data */
+	int direction;
+
+	setting[0] >> direction;
+
+	unsigned int word_num = word_idx.size();
+
+	if (word_num != 0) {
+		if (direction == 0) {
+			for (unsigned int i = 0; i < word_num; i++) {
+				word_idx[i] = i;
+			}
+		}
+		else if (direction == 1) {
+			for (unsigned int i = 0; i < word_num; i++) {
+				word_idx[i] = word_num - 1 - i;
+			}
+		}
+		else {
+			random_shuffle(word_idx.begin(), word_idx.end());
+		}
+
+		if (present_pos != -1) {
+			unsigned int last_pos = word_idx[present_pos];
+
+			/* find the last pos */
+			for (unsigned int i = 0; i < word_num; i++) {
+				if (word_idx[i] == last_pos) {
+					present_pos = i;
+					break;
+				}
+			}
+		}
+	}
+}
+
+void select_next_idx(const vector<unsigned int> & word_idx, const vector<bool>& check, int & present_pos, Array & setting)
+{
+	/* get setting data */
+	int checker;
+
+	setting[1] >> checker;
+
+	if (present_pos == -1) {
+		return;
+	}
+
+	if (word_idx.size() > present_pos) {
+		if ((bool)checker == true) {
+			if (present_pos + 1 == check.size())
+				present_pos %= word_idx.size();
+			else
+				present_pos++;
+		}
+		else {
+			do {
+				if (present_pos + 1 == check.size()) {
+					unsigned int word_idx_size = word_idx.size();
+					for (unsigned int i = 0; i < word_idx_size; i++) {
+						if (check[word_idx[i]] == false) {
+							present_pos = i;
+							return;
+						}
+					}
+					present_pos = -1;
+					break;
+				}
+				present_pos++;
+			} while (check[word_idx[present_pos]]);
+		}
+	}
+	else
+		present_pos = -1;
+}
+
+void select_prev_idx(const vector<unsigned int> & word_idx, const vector<bool> & check, int & present_pos, Array & setting)
+{
+	/* get setting data */
+	int checker;
+
+	setting[1] >> checker;
+
+	if (present_pos == -1)
+		return;
+
+	if (word_idx.size() > present_pos) {
+		if ((bool)checker == true) {
+			if (present_pos == 0) {
+				present_pos = word_idx.size() - 1;
+			}
+			else
+				present_pos--;
+		}
+		else {
+			do {
+				if (present_pos == 0) {
+					unsigned int word_idx_size = word_idx.size();
+					for (unsigned int i = 0; i < word_idx_size; i++) {
+						if (check[word_idx[i]] == false) {
+							present_pos = i;
+							return;
+						}
+					}
+					present_pos = -1;
+					break;
+				}
+				present_pos--;
+			} while (check[word_idx[present_pos]]);
+		}
+	}
+	else
+		present_pos = -1;
+}
+
+vector<wstring> view_word(const vector<unsigned int> & word_idx, vector<Array>& word, int & present_pos, Array & setting)
+{
+	Array picked_word = word[word_idx[present_pos]];
+	vector<wstring> result;
+	/* get setting data */
+	int type;
+
+	setting[2] >> type;
+
+	unsigned int word_num = word.size();
+
+	if(type == 2)
+		type = rand() % 2;
+
+	if (type == 0) {
+		int idx = rand() % (picked_word.get_size() - 4) + 1;
+		wstring str = picked_word[idx].get_raw(); // meaning
+		result.push_back(str);
+		for (unsigned int i = 0; i < word_num; i++) {
+			unsigned int word_size = word[i].get_size();
+			for (unsigned int j = 1; j < word_size - 3; j++) {
+				if (word[i][j].get_raw() == str) {
+					result.push_back(word[i][0].get_raw());
+					break;
+				}
+			}
+		}
+	}
+	else if(type == 1){
+		wstring str = picked_word[0].get_raw(); // word
+		result.push_back(str);
+		unsigned int picked_word_size = picked_word.get_size();
+		for (unsigned int i = 1; i < picked_word_size - 3; i++) {
+			result.push_back(picked_word[i].get_raw());
+		}
+		for (unsigned int i = 0; i < word_num; i++) {
+			unsigned int word_size = word[i].get_size();
+			if (word[i][0] == str && i != word_idx[present_pos]) {
+				for (unsigned int j = 1; j < word_size - 3; j++) {
+					for (unsigned int k = 1; k < picked_word_size - 3; k++) {
+						if (word[i][j].get_raw() != result[k])
+							result.push_back(word[i][j].get_raw());
+					}
+				}
+			}
+		}
+	}
+
+	return result;
 }

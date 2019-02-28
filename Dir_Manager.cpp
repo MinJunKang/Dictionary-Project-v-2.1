@@ -947,10 +947,12 @@ void Dir_Manager::Update_begin(unsigned int time_interval)
 
 void Dir_Manager::Update_pause()
 {
-	this->update_state = false;
-	while (!m_th.joinable()) {} // wait until thread is joinable
-	if (m_th.joinable()) {
-		m_th.join();
+	if (this->update_state) {
+		this->update_state = false;
+		while (!m_th.joinable()) {} // wait until thread is joinable
+		if (m_th.joinable()) {
+			m_th.join();
+		}
 	}
 }
 

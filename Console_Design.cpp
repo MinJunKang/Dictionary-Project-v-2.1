@@ -101,7 +101,7 @@ int Design_Tool::Get_valid_id()
 				return i + 1;
 		}
 
-		return -(this->console_thread.size() + 1); // there is no valid id, system creates new space to allocate id
+		return -(int)(this->console_thread.size() + 1); // there is no valid id, system creates new space to allocate id
 	}
 }
 
@@ -770,12 +770,13 @@ vector<int> Design_Tool::Printdesign(int num_pick, bool if_input, wstring * inpu
 	while (1) {
 		if (IsValid(id)) {
 			for (unsigned int i = 1; i < UI.size(); i++) {
-				if (UI[i]->type == BUTTON) {
+				if (UI[i]->type == BUTTON && UI[i]->usage == true) {
 					if (pos_x + 1 >= UI[i]->pos_x && pos_x + 1 < UI[i]->pos_x + UI[i]->width) {
 						if (pos_y >= UI[i]->pos_y && pos_y < UI[i]->pos_y + UI[i]->height) {
 							if (choice.size() != num_pick)
 								choice.push_back(UI[i]->idx);
 							else {
+								pos_x = -1; pos_y = -1;
 								Dealloc_thread(id);
 							}
 							break;

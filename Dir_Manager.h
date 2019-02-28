@@ -63,14 +63,6 @@ private:
 	2. for thread
 	*/
 
-	void Update(bool root2base = false);
-	/*
-	Contents :
-	1. Update all the hierarchy and rearrange it
-	2. If the current path exits after update, maintain it
-	3. Otherwise, it will be reset to highest path
-	*/
-
 	/* Stack Variable for Update */
 	bool update_state; // check if update utility is working
 	unsigned int update_interval; // set the period of update
@@ -99,6 +91,14 @@ public:
 
 	Dir_Manager(wstring Upper_bound_path);
 	~Dir_Manager();
+
+	void Update(bool root2base = false);
+	/*
+	Contents :
+	1. Update all the hierarchy and rearrange it
+	2. If the current path exits after update, maintain it
+	3. Otherwise, it will be reset to highest path
+	*/
 
 	wstring Path2name(wstring path);
 	/*

@@ -94,7 +94,7 @@ int Data_Manager::Declare_Type(wstring str) {
 	unsigned int type = 0; // wstring(default)
 	for (int i = 0; i < str.length(); i++) {
 		c = str[i];
-		if (isdigit(c) && type == 0)
+		if (iswdigit(c) && type == 0)
 			type = 9; // Long Long int
 		else if (type == 9 && c == '.')
 			type = 13; // Long double
