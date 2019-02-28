@@ -3,7 +3,7 @@
 Dictionary Program
 
 # Supported Operating System
-Windows only
+Windows 10, Windows 7
 
 # ReadMe File
 
