@@ -85,21 +85,36 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmd
 
 	MSG msg;
 	ShowWindow(hWnd, nCmdShow);
+
+	string hours, mins, secs;
 	
 	while (1) {
-		diff_time = clock() - start_time;
+		diff_time = limit * 1000 - (clock() - start_time);
 
 		hour = diff_time / 3600000;
 		min = (diff_time / 60000) % 60;
 		sec = (diff_time / 1000) % 60;
-		message = to_string(hour) + " : " + to_string(min) + " : " + to_string(sec);
-		TextOut(hdc, 70, 35, message.c_str(), message.length());
-		if (diff_time / 1000 >= limit - 1)
+
+		hours = to_string(hour);
+		mins = to_string(min);
+		secs = to_string(sec);
+
+		if (hour < 10)
+			hours = "0" + hours;
+		if (min < 10)
+			mins = "0" + mins;
+		if (sec < 10)
+			secs = "0" + secs;
+
+		message = hours + " : " + mins + " : " + secs;
+
+		TextOut(hdc, 42, 35, message.c_str(), message.length());
+		if (diff_time / 1000 <= 0)
 			break;
 		GetMessage(&msg, nullptr, 0, 0);
 	}
-	message = "Time Over";
-	TextOut(hdc, 50, 35, message.c_str(), message.length());
+	message = " Time Over ";
+	TextOut(hdc, 42, 35, message.c_str(), message.length());
 	Sleep(1000);
 	return 0;
 }
